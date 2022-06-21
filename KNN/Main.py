@@ -1,16 +1,16 @@
 import numpy as np
 from math import sqrt
+from tqdm import tqdm
 
 
 
-class knn ():
+class Knn:
 
-    def __init__(self, n_neighbors = 1):
+    def __init__(self, n_neighbors=1):
         self.n_neighbors = n_neighbors
         self.loss = 0
         self.X_Data = []
         self.Y_Data = []
-
 
 
     def fit (self, X_Data, Y_Data):
@@ -19,11 +19,35 @@ class knn ():
 
 
     def predict (self, X_Test):
-        for in :
-            p1 =
-            p2 =
-            sum = 0
-            for
 
-                sum = (coord_p2 - Coord_p1) ^ 2
-            distance = sqrt(sum)
+        out_arr = np.array([])
+        for X_Test_elem in tqdm(X_Test):
+
+            distance_arr = np.array([])
+            for X_elem in self.X_Data:
+                p1 = X_elem
+                p2 = X_Test_elem
+                sub_coords = np.square(p1 - p2)
+                distance = sqrt(np.sum(sub_coords))
+                distance_arr = np.append(distance_arr, distance)
+
+            distance_arr_ind = distance_arr.argsort()
+            Y_sorted = self.Y_Data[distance_arr_ind]
+            Y_sorted = Y_sorted[:self.n_neighbors]
+            out = np.sum(Y_sorted) / Y_sorted.shape[0]
+            out_arr = np.append(out_arr, out)
+
+        return out_arr
+
+
+
+X = np.random.rand(3, 4)
+Y = np.random.rand(3)
+
+test = np.random.rand(3, 4)
+
+model = Knn(n_neighbors=1)
+model.fit(X, Y)
+model.predict(test)
+
+
