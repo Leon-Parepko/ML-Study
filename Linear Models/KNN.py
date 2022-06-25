@@ -19,7 +19,6 @@ class Knn:
 
 
     def predict (self, X_Test):
-
         out_arr = np.array([])
         for X_Test_elem in tqdm(X_Test):
 
