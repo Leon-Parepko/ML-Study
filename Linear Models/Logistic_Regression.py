@@ -20,7 +20,7 @@ def add_ones_col(X):
 
 
 def softmax(x):
-    e_x = np.exp(x - np.max(x))
+    e_x = np.exp(x)
     return e_x / e_x.sum(axis=0)
 
 
@@ -44,34 +44,49 @@ class LogisticRegression:
         else:
             X_input = np.append(1, X_input)     # Add single one if it is vector
 
-        out = softmax(X_input @ self.weights)
+        out = softmax(- X_input @ self.weights)
         return out
 
 
     def train(self, lr=0.1, iter=100, L1=False, L2=False):
+
         X = add_ones_col(self.X_Data)           # Add ones column if it is matrix
         features_num = np.shape(X)[1]
 
         for _ in tqdm(range(0, iter)):          # Start of gradient decent
-            for i in range(0, np.shape(X)[0]):  # Iteratively get mean gradient of a sample
+            d_lasso = 0
+            d_ridge = 0
 
-                d_lasso = 0
-                d_ridge = 0
+            if L1 != False:
+              d_lasso = L1 * (self.weights / np.absolute(self.weights))     # Lasso regularisation derivative
 
-                if L1 != False:
-                  d_lasso = L1 * (self.weights / np.absolute(self.weights))     # Lasso regularisation derivative
+            if L2 != False:
+              d_ridge = 2 * L2 * self.weights       # Ridge regularisation derivative
+              d_ridge[0] = 0
 
-                if L2 != False:
-                  d_ridge = 2 * L2 * self.weights       # Ridge regularisation derivative
-                  d_ridge[0] = 0                        # Did not consider bias term
 
-                prediction = self.predict(self.X_Data[i, :])
-                # Calculate loss derivative with it's regularization
-                d_loss = (1 / features_num) * np.reshape(X[i, :], (X[i, :].shape[0], 1))\
-                         @ np.reshape((prediction - self.Y_Data[i]), (1, prediction.shape[0]))\
-                         + d_lasso + d_ridge
+            prediction = self.predict(self.X_Data)
+            d_loss = 1 / features_num * (X.T @ (prediction - self.Y_Data)) + L1 +L2
 
-                self.weights = self.weights - lr * d_loss
+            self.weights = self.weights - lr * d_loss
+
+            # for i in range(0, np.shape(X)[0]):  # Iteratively get mean gradient of a sample
+            #
+            #     d_lasso = 0
+            #     d_ridge = 0
+            #
+            #     if L1 != False:
+            #       d_lasso = L1 * (self.weights / np.absolute(self.weights))     # Lasso regularisation derivative
+            #
+            #     if L2 != False:
+            #       d_ridge = 2 * L2 * self.weights       # Ridge regularisation derivative
+            #       d_ridge[0] = 0                        # Did not consider bias term
+            #
+            #     prediction = self.predict(self.X_Data[i, :])
+            #     # Calculate loss derivative with it's regularization (gradient)
+
+
+
 
 
 
