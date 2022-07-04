@@ -1,36 +1,23 @@
-import math
 
 import numpy as np
 from tqdm import tqdm
 from sklearn import preprocessing
 
 
-class Node:
-    def __init__(self, condition, X, Y, left_ch=None, right_ch=None, root=False, leaf=False, prediction=None):
-        self.condition = condition
-        self.X = X
-        self.Y = Y
-        self.left_ch = left_ch
-        self.right_ch = right_ch
-        self.root = root
-        self.leaf = leaf
-        self.prediction = prediction
-
-
-
-
-
-
-
-
-def info_gain(parent, left_ch, right_ch):
+def info_gain(parent, left_ch, right_ch, method="gini"):
     p_size = parent.size
     l_size = left_ch.size
     r_size = right_ch.size
+    ig = 0
 
-    ig = entropy(parent) - \
-         (l_size / p_size) * entropy(left_ch) - \
-         (r_size / p_size) * entropy(right_ch)
+    if method == "entropy":
+        ig = entropy(parent) - \
+             (l_size / p_size) * entropy(left_ch) - \
+             (r_size / p_size) * entropy(right_ch)
+    elif method == "gini":
+        ig = entropy(parent) - \
+             (l_size / p_size) * gini(left_ch) - \
+             (r_size / p_size) * gini(right_ch)
     return ig
 
 
@@ -40,9 +27,19 @@ def entropy(Y):
     entropy = 0
     for elem in counts:
         class_prob = elem / total_obj
-        entropy -= class_prob * math.log2(class_prob)
+        entropy -= class_prob * np.log2(class_prob)
 
     return entropy
+
+
+def gini(Y):
+    total_obj = Y.size
+    unique, counts = np.unique(Y, return_counts=True)
+    gini = 0
+    for elem in counts:
+        class_prob = elem / total_obj
+        gini += class_prob ** 2
+    return 1 - gini
 
 
 
@@ -111,12 +108,23 @@ def check_combinations(X, Y):
 
 
 
+class Node:
+    def __init__(self, condition, X, Y, left_ch=None, right_ch=None, root=False, leaf=False, prediction=None):
+        self.condition = condition
+        self.X = X
+        self.Y = Y
+        self.left_ch = left_ch
+        self.right_ch = right_ch
+        self.root = root
+        self.leaf = leaf
+        self.prediction = prediction
 
 
 class DecisionTree():
     def __init__(self):
         self.root = None
         self.depth = 0
+
 
     def get_leafs(self, root, leaf_list=None):
         if leaf_list is None:
@@ -136,10 +144,6 @@ class DecisionTree():
             leaf_list = self.get_leafs(r_ch, leaf_list=leaf_list)
 
         return leaf_list
-
-
-
-
 
 
     def fit(self, X, Y):
@@ -179,7 +183,30 @@ class DecisionTree():
             self.depth += 1
 
 
+    def predict_single(self, root, X):
+        pred = root.prediction
+        cond = root.condition
+        out = None
 
+        # Base case when there is prediction
+        if pred is not None:
+            return pred
+
+        elif cond is not None:
+            cond_i, cond_j = cond
+            if self.X[cond_i, cond_j] >= X[cond_j]:
+                out = self.predict_single(root.left_ch, X)
+            else:
+                out = self.predict_single(root.right_ch, X)
+
+        return out
+
+    def predict_many(self, X):
+        out = []
+        for elem in X:
+            pred = self.predict_single(self.root, elem)
+            out.append(pred)
+        return np.array(out)[np.newaxis].T
 
 
 
@@ -189,11 +216,11 @@ class DecisionTree():
 
 
 if __name__ == '__main__':
-    print(np.mean([1, 2]))
-    X_train = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [3, 2, 1], [6, 5, 4], [9, 8, 7]])
-    Y_train = np.array([1, 2, 0, 1, 2, 0])
-
+    X_train = np.array([[1, 1], [1, 3], [2, 3], [-10, -1], [2, 1], [3, 1], [3, 3], [20, 10]])
+    Y_train = np.array([1, 1, 1, 1, 0, 0, 0, 0])
 
     D_T = DecisionTree()
     D_T.fit(X_train, Y_train)
-    D_T.train(max_depth=2)
+    D_T.train(max_depth=5)
+    c = D_T.predict_many(np.array([[-100, 1], [100, -1]]))
+    print(c)
