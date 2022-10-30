@@ -1,7 +1,6 @@
 
 import torch.nn as nn
 
-
 class MNIST_NN(nn.Module):
     def __init__(self, input_size, output_size):
         super(MNIST_NN, self).__init__()
